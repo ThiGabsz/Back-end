@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar Jogador</title>
+    
+    <!-- Link para o nosso arquivo CSS externo -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <!-- Links para a biblioteca de autocomplete Awesomplete -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js" async></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Registrar Jogador</h1>
+        <form id="registroForm">
+            <!-- Campos do formulário -->
+            <div class="form-group">
+                <label for="nome">Nome Completo</label>
+                <input type="text" id="nome" name="nome" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="senha">Senha</label>
+                <input type="password" id="senha" name="senha" required>
+            </div>
+            <div class="form-group">
+                <label for="nascimento">Data de Nascimento</label>
+                <input type="date" id="nascimento" name="nascimento" required>
+            </div>
+            <div class="form-group">
+                <label for="posicao">Posição Principal</label>
+                <select id="posicao" name="posicao" required>
+                    <option value="" disabled selected>Selecione sua posição</option>
+                    <option value="GK">Goleiro (GK )</option>
+                    <option value="CB">Zagueiro Central (CB)</option>
+                    <option value="LB">Lateral Esquerdo (LB)</option>
+                    <option value="RB">Lateral Direito (RB)</option>
+                    <option value="LWB">Ala Esquerdo (LWB)</option>
+                    <option value="RWB">Ala Direito (RWB)</option>
+                    <option value="SW">Líbero (SW)</option>
+                    <option value="CDM">Volante (CDM)</option>
+                    <option value="CM">Meio-Campista Central (CM)</option>
+                    <option value="CAM">Meia Ofensivo Central (CAM)</option>
+                    <option value="LM">Meia Esquerda (LM)</option>
+                    <option value="RM">Meia Direita (RM)</option>
+                    <option value="LW">Ponta Esquerda (LW)</option>
+                    <option value="RW">Ponta Direita (RW)</option>
+                    <option value="ST">Atacante (ST)</option>
+                    <option value="CF">Centroavante Recuado (CF)</option>
+                    <option value="LF">Segundo Atacante Esquerdo (LF)</option>
+                    <option value="RF">Segundo Atacante Direito (RF)</option>
+                    <option value="SS">Segundo Atacante (SS)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="cidade">Cidade</label>
+                <input type="text" id="cidade" name="cidade" class="awesomplete" placeholder="Comece a digitar o nome da cidade..." required>
+            </div>
+            
+            <button type="submit">Registrar</button>
+        </form>
+        <div id="mensagem" class="message"></div>
+    </div>
+
+    <script>
+        // --- Lógica para o Autocomplete de Cidades ---
+        const inputCidade = document.getElementById('cidade');
+        let listaCidades = [];
+
+        fetch('https://servicodados.ibge.gov.br/api/v1/localidades/municipios?orderBy=nome' )
+            .then(response => response.json())
+            .then(data => {
+                // CORREÇÃO APLICADA AQUI: Usando uma estrutura de dados mais robusta da API.
+                listaCidades = data.map(municipio => {
+                    const estado = municipio['regiao-imediata']['regiao-intermediaria'].UF.sigla;
+                    return `${municipio.nome} - ${estado}`;
+                });
+                
+                new Awesomplete(inputCidade, {
+                    list: listaCidades,
+                    minChars: 1,
+                    maxItems: 7,
+                });
+            })
+            .catch(error => {
+                console.error('Falha ao carregar a lista de cidades:', error);
+                inputCidade.placeholder = "Não foi possível carregar as cidades.";
+            });
+
+        // --- Lógica para Enviar o Formulário ---
+        document.getElementById('registroForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const formData = {
+                nome: document.getElementById('nome').value,
+                email: document.getElementById('email').value,
+                senha: document.getElementById('senha').value,
+                nascimento: document.getElementById('nascimento').value,
+                posicao: document.getElementById('posicao').value,
+                cidade: document.getElementById('cidade').value
+            };
+            
+            const mensagemDiv = document.getElementById('mensagem');
+
+            if (!listaCidades.includes(formData.cidade)) {
+                mensagemDiv.textContent = 'Por favor, selecione uma cidade válida da lista.';
+                mensagemDiv.className = 'message error';
+                mensagemDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch('/registrar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData),
+                });
+
+                const result = await response.json();
+                mensagemDiv.textContent = result.mensagem || result.erro;
+                mensagemDiv.style.display = 'block';
+
+                if (response.ok) {
+                    mensagemDiv.className = 'message success';
+                    document.getElementById('registroForm').reset();
+                } else {
+                    mensagemDiv.className = 'message error';
+                }
+            } catch (error) {
+                mensagemDiv.textContent = 'Erro de conexão. Verifique se o servidor está rodando.';
+                mensagemDiv.className = 'message error';
+                mensagemDiv.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
