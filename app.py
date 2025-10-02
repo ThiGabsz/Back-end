@@ -1,18 +1,18 @@
-# Importe as funções e bibliotecas necessárias
+# bibliotecas
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import bcrypt
 import requests
 from supabase import create_client, Client
 
-# Inicializa o aplicativo Flask
+# Inicializa o aplicativo Flask espero
 app = Flask(__name__)
-# APLICA O CORS: Permite que o frontend (HTML/JS) se comunique com este backend
+# APLICA O CORS: Permite que o frontend (HTML/JS) se comunique com este backend dependendo da pagina
 CORS(app)
 
-# ==============================
+
 # CONFIGURAÇÃO E INICIALIZAÇÃO DO SUPABASE CLIENT (API)
-# ==============================
+
 SUPABASE_URL = "https://ulbaklykimxpsdrtkqet.supabase.co" 
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsYmFrbHlraW14cHNkcnRrcWV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzMjc0MjcsImV4cCI6MjA3MzkwMzQyN30.A3_WLF3cNstQtXcOr2Q3OJCvTYqBQe7wmmXHc_WCqAk"
 
@@ -24,14 +24,12 @@ except Exception as e:
     print(f"ERRO CRÍTICO ao conectar com Supabase: {e}")
     supabase = None
 
-# ==============================
-# CONFIGURAÇÃO GOOGLE MAPS API
-# ==============================
+# CONFIGURAÇÃO GOOGLE MAPS API (em obras)
+
 API_KEY = ""
 
-# ==============================
 # ROTA PRINCIPAL PARA EXIBIR A PÁGINA DE REGISTRO
-# ==============================
+
 @app.route("/")
 def home():
     """
@@ -40,9 +38,8 @@ def home():
     """
     return render_template("registrar.html")
 
-# ==============================
-# ROTA: Registrar Usuário (API)
-# ==============================
+# Registrar Usuário (API)
+
 @app.route("/registrar", methods=["POST"])
 def registrar():
     """
@@ -66,7 +63,10 @@ def registrar():
     data_to_insert = {
         "nome": nome,
         "email": email,
-        # CORREÇÃO APLICADA AQUI: Usando "senha" para corresponder à sua coluna no Supabase
+        "posicao": posição,
+        "nascimento": nascimento,
+        "cidade": cidade,
+        # CORREÇÃO APLICADA AQUI: Usando "senha" para corresponder à sua coluna no Supabase funciona +/-
         "senha": senha_hash 
     }
 
@@ -81,9 +81,8 @@ def registrar():
             print(f"[ERRO /registrar]: {e}")
             return jsonify({"erro": "Ocorreu um erro inesperado ao registrar o usuário"}), 500
 
-# ==============================
-# ROTA: Listar usuários
-# ==============================
+# Listar usuários
+
 @app.route("/usuarios", methods=["GET"])
 def listar_usuarios():
     if not supabase:
@@ -94,9 +93,8 @@ def listar_usuarios():
     except Exception as e:
         return jsonify({"erro": f"Erro ao listar usuários: {str(e)}"}), 500
 
-# ==============================
-# ROTA: Buscar jogadores por posição
-# ==============================
+# Buscar jogadores por posição
+
 @app.route("/jogadores/<posicao>", methods=["GET"])
 def buscar_jogadores(posicao):
     if not supabase:
@@ -107,9 +105,8 @@ def buscar_jogadores(posicao):
     except Exception as e:
         return jsonify({"erro": f"Erro ao buscar jogadores: {str(e)}"}), 500
 
-# ==============================
-# ROTA: Buscar cidade no Google Maps
-# ==============================
+# Buscar cidade no Google Maps (so o basico pq num ta legal isso)
+
 @app.route("/cidade/<nome_cidade>", methods=["GET"])
 def procurar_cidade(nome_cidade):
     if not API_KEY:
@@ -121,9 +118,8 @@ def procurar_cidade(nome_cidade):
     except requests.exceptions.RequestException as e:
         return jsonify({"erro": "Falha ao comunicar com a API do Google Maps."}), 502
 
-# ==============================
 # Rodar servidor
-# ==============================
+
 if __name__ == "__main__":
     if supabase:
         print("Iniciando o servidor Flask em modo de desenvolvimento...")
